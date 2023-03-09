@@ -1,30 +1,58 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
+import "../CSS/App/App.css";
 import Rectangle from "../Components/Rectangle";
 
 const App = () => {
   const [moveableComponents, setMoveableComponents] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [images, setImages] = useState(null);
+
+  const getImages = async () => {
+    // Get images
+    fetch('https://jsonplaceholder.typicode.com/photos')
+      .then(response => response.json())
+      .then(json => setImages(json))
+  }
+
+  useEffect(() => {
+    // First load
+    getImages();
+  }, [])
+
+  const getObjImage = () => {
+    let image = null;
+    for(let i = 0; i < images.length; i++) {
+      image = moveableComponents.filter(moveable => moveable.id === images[i].id);
+      // Si está vacío significa que la imagen esá disponible
+      console.log("image", image);
+      if (image.length === 0) {
+        // Se asigna el objeto de la posición que se encontró vacío.
+        image = images[i];
+        break;
+      }
+    }
+    return image;
+  }
 
   const addMoveable = () => {
     // Create a new moveable component and add it to the array
-    const COLORS = ["red", "blue", "yellow", "green", "purple"];
-
+    console.log(moveableComponents);
     setMoveableComponents([
       ...moveableComponents,
       {
-        id: Math.floor(Math.random() * Date.now()),
-        top: 0,
-        left: 0,
+        id: images[moveableComponents.length].id,
+        transform: "translate(0px, 0px)",
         width: 100,
         height: 100,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        image: images[moveableComponents.length].url,
         updateEnd: true
       },
     ]);
   };
 
   const updateMoveable = (id, newComponent, updateEnd = false) => {
+    // Update moveable size and position
     const updatedMoveables = moveableComponents.map((moveable, i) => {
       if (moveable.id === id) {
         return { id, ...newComponent, updateEnd };
@@ -55,18 +83,16 @@ const App = () => {
     }
   };
 
+  const removeMoveable = (id) => {
+    // Remove a moveable component
+    const updatedMoveables = moveableComponents.filter((_, index) => index !== id);
+    setMoveableComponents(updatedMoveables);
+  }
+
   return (
     <main style={{ height : "100vh", width: "100vw" }}>
       <button onClick={addMoveable}>Add Moveable1</button>
-      <div
-        id="parent"
-        style={{
-          position: "relative",
-          background: "black",
-          height: "80vh",
-          width: "80vw",
-        }}
-      >
+      <div id="parent">
         {moveableComponents.map((item, index) => (
           <Rectangle
             {...item}
@@ -75,6 +101,8 @@ const App = () => {
             handleResizeStart={handleResizeStart}
             setSelected={setSelected}
             isSelected={selected === item.id}
+            index={index}
+            removeMoveable={removeMoveable}
           />
         ))}
       </div>

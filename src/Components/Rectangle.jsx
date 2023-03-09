@@ -1,20 +1,34 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import Moveable from "react-moveable";
+import "../CSS/Components/Rectangle.css";
 
 const Rectangle = ({
   updateMoveable,
   top,
   left,
+  transform,
   width,
   height,
   index,
   color,
+  image,
   id,
   setSelected,
-  isSelected = false,
+  isSelected,
   updateEnd,
+  removeMoveable,
 }) => {
+  useEffect(() => {
+
+    let example = document.getElementById("parent")
+    console.log("example.style.height", example.style.height);
+  }, [])
+  const [frame, setFrame] = React.useState({
+      translate: [0,0],
+      clipStyle: "inset",
+  });
+
   const ref = useRef();
 
   const [nodoReferencia, setNodoReferencia] = useState({
@@ -49,6 +63,7 @@ const Rectangle = ({
       width: newWidth,
       height: newHeight,
       color,
+      image,
     });
 
     // ACTUALIZAR NODO REFERENCIA
@@ -98,10 +113,34 @@ const Rectangle = ({
         width: newWidth,
         height: newHeight,
         color,
+        image,
       },
       true
     );
   };
+
+  const handleOnDrag = (e) => {
+    const parentHeight = document.getElementById("parent").clientHeight;
+    const parentWidth = document.getElementById("parent").clientWidth;
+    const positionX = e.translate[0];
+    const positionY = e.translate[1];
+    const totalHeight = positionY + e.height;
+    const totalWidth = positionX + e.width;
+    if( positionX >= 0 && positionY >= 0 && 
+        totalHeight < parentHeight && totalWidth < parentWidth
+      ){
+      ref.current.style.transform = `translate(${positionX}px, ${positionY}px)`;
+      updateMoveable(id, {  
+        top: e.top,
+        left: e.left,
+        transform: `translate(${e.beforeTranslate[0]}px, ${e.beforeTranslate[1]}px)`,
+        image,
+        width,
+        height,
+        color,
+      });
+    }
+  }
 
   return (
     <>
@@ -111,27 +150,25 @@ const Rectangle = ({
         id={"component-" + id}
         style={{
           position: "absolute",
-          top: top,
-          left: left,
           width: width,
           height: height,
-          background: color,
+          backgroundImage: `url(${image})`,
+          backgroundSize: "100% 100%",
         }}
         onClick={() => setSelected(id)}
-      />
-
+      >
+        <div className="buttonContainer"
+        >
+          <button onClick={_ => removeMoveable(index)}>X</button>
+        </div>
+      </div>
+      
       <Moveable
-        target={isSelected && ref.current}
+        target={isSelected && ref}
         resizable
         draggable
-        onDrag={(e) => {
-          updateMoveable(id, {
-            top: e.top,
-            left: e.left,
-            width,
-            height,
-            color,
-          });
+        onDrag={e => {
+          handleOnDrag(e);
         }}
         onResize={onResize}
         onResizeEnd={onResizeEnd}
